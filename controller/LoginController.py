@@ -46,14 +46,63 @@ class LoginController(BaseController):
         else:
             self.logger.debug('无法加载登录界面')
             return False
+        
+         # 更新登录流程
+        if self.ocr.is_text_in_screen("点击进入"):
+            self.logger.debug('开始切换账号流程')
+            
+            # 1. 点击退出按钮 (重试3次)
+            retry_count = 3
+            while retry_count > 0:
+                if self.ocr.click_if_appear(icon_button_logout, timeout=5):
+                    break
+                retry_count -= 1
+                self.logger.debug(f'重试点击退出按钮，剩余重试次数: {retry_count}')
+                time.sleep(1)
+            if retry_count == 0:
+                self.logger.error('无法点击退出按钮')
+                return False
+            time.sleep(2)
+            
+            # 2. 点击确认退出 (重试3次)
+            retry_count = 3
+            while retry_count > 0:
+                if self.ocr.find_text_and_click('退出', match_all=True):
+                    break
+                retry_count -= 1
+                self.logger.debug(f'重试点击确认退出，剩余重试次数: {retry_count}')
+                time.sleep(1)
+            if retry_count == 0:
+                self.logger.error('无法点击确认退出')
+                return False
+            time.sleep(2)
+            
+            # 3. 点击登录其他账号 (重试3次)
+            retry_count = 3
+            while retry_count > 0:
+                if self.ocr.find_text_and_click('登录其他账号', match_all=True):
+                    break
+                retry_count -= 1
+                self.logger.debug(f'重试点击登录其他账号，剩余重试次数: {retry_count}')
+                time.sleep(1)
+            if retry_count == 0:
+                self.logger.error('无法点击登录其他账号')
+                return False
+            time.sleep(2)
+            
+            return True
+        else:
+            self.logger.debug('已在登录界面，可直接输入账号密码')
+            return True
 
-        self.logger.debug('点击切换账号')
-        self.ocr.click_if_appear(icon_button_logout,timeout=2)
-        time.sleep(1)
-        self.ocr.find_text_and_click('确定', match_all=True)
+        # self.logger.debug('点击切换账号')
+        # self.ocr.click_if_appear(icon_button_logout,timeout=2)
+        # time.sleep(1)
+        # self.ocr.find_text_and_click('确定', match_all=True)
 
     def user_input_focus(self):
-        self.ocr.find_text_and_click('输入手机号')
+        self.ocr.find_text_and_click('输入手机号/邮箱')
+        self.logger.debug('点击输入手机号/邮箱成功')
         
     def password_input_focus(self):
         self.ocr.find_text_and_click('输入密码')
@@ -83,6 +132,7 @@ class LoginController(BaseController):
         self.user_input_focus()
         self.logger.debug('输入账号')
         time.sleep(0.5)
+        self.logger.debug(f'输入账号: {user_name}')
         self.type_string(user_name)
         self.logger.debug('输入账号完毕')
         time.sleep(0.5)
@@ -90,6 +140,7 @@ class LoginController(BaseController):
         self.password_input_focus()
         self.logger.debug('输入密码')
         time.sleep(0.5)
+        self.logger.debug(f'输入密码: {password}')
         self.type_string(password)
         self.logger.debug('输入密码完毕')
         time.sleep(0.5)
